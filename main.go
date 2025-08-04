@@ -17,12 +17,18 @@ func main() {
 
 	fmt.Println("Listening on port :6379")
 
-	conn, err := L.Accept()
+	for {
+		conn, err := L.Accept()
 
-	if err != nil {
-		fmt.Printf("%v", err)
+		if err != nil {
+			fmt.Printf("%v", err)
+		}
+
+		go handleConnection(conn)
 	}
+}
 
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	for {
@@ -32,8 +38,13 @@ func main() {
 		value, err := resp.Read()
 
 		if err != nil {
-			fmt.Println(err)
-			return
+			if err == io.EOF {
+				fmt.Println("Client disconnected")
+				break
+			}
+
+			fmt.Println("Error:", err)
+			break
 		}
 
 		if value.typ != "array" {
